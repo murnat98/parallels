@@ -24,3 +24,15 @@ class KeyList(View):
         storage = {pair.key: pair.value for pair in pairs}
 
         return JsonResponse(storage)
+
+
+class Key(View):
+    def get(self, request, key=None):
+        try:
+            pair = Storage.objects.get(key=key)
+
+            key, value = pair.key, pair.value
+        except Storage.DoesNotExist:
+            key, value = 0, 0
+
+        return JsonResponse({key: value})
