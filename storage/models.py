@@ -6,7 +6,7 @@ class Storage(models.Model):
     value = models.CharField(max_length=255, name='value', verbose_name='Значение')
 
     def __str__(self):
-        return self.key
+        return str(self.key)
 
     class Meta:
         verbose_name = 'Хранилище'
