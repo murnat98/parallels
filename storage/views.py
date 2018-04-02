@@ -74,9 +74,4 @@ class Key(View):
     def delete(self, request, key=None):
         storage = Storage.objects.filter(key=key).delete()
 
-        try:
-            storage.save()
-        except IntegrityError:
-            pass
-
         return JsonResponse({'success': True})
