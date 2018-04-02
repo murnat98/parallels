@@ -43,6 +43,17 @@ class Key(View):
             return JsonResponse({'success': False, 'error': 'Value is empty'})
 
         storage = Storage(key=key, value=request.POST['value'])
+
+        try:
+            storage.save()
+        except IntegrityError:  # {'error': error}
+            pass
+
+        return JsonResponse({'success': True})
+
+    def put(self, request, key=None):
+        storage = Storage.objects.update(key=key, value=request.POST['value'])
+
         try:
             storage.save()
         except IntegrityError:
@@ -50,8 +61,12 @@ class Key(View):
 
         return JsonResponse({'success': True})
 
-    def put(self, request, key=None):
-        pass
-
     def delete(self, request, key=None):
-        pass
+        storage = Storage.objects.filter(key=key).delete()
+
+        try:
+            storage.save()
+        except IntegrityError:
+            pass
+
+        return JsonResponse({'success': True})
