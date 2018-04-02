@@ -1,3 +1,5 @@
+from urllib import parse
+
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.views import View
@@ -46,13 +48,21 @@ class Key(View):
 
         try:
             storage.save()
-        except IntegrityError:  # {'error': error}
+        except IntegrityError:
             pass
 
         return JsonResponse({'success': True})
 
     def put(self, request, key=None):
-        storage = Storage.objects.update(key=key, value=request.POST['value'])
+        try:
+            storage = Storage.objects.get(key=key)
+        except Storage.MultipleObjectsReturned:
+            pass  # TODO: return error here
+
+        put_data = parse.parse_qs(request.body)
+        storage_value = put_data[b'value'][0].decode('utf-8')
+
+        storage.value = storage_value
 
         try:
             storage.save()
