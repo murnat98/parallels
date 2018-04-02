@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.http import JsonResponse
 from django.views import View
 
@@ -36,3 +37,21 @@ class Key(View):
             key, value = 0, 0
 
         return JsonResponse({key: value})
+
+    def post(self, request, key=None):
+        if 'value' not in request.POST:
+            return JsonResponse({'success': False, 'error': 'Value is empty'})
+
+        storage = Storage(key=key, value=request.POST['value'])
+        try:
+            storage.save()
+        except IntegrityError:
+            pass
+
+        return JsonResponse({'success': True})
+
+    def put(self, request, key=None):
+        pass
+
+    def delete(self, request, key=None):
+        pass
