@@ -2,6 +2,7 @@
 
 ## Before start
 * python3 -m venv env
+* . env/bin/activate
 * Create file settings.ini
 
 ### settings.ini structure
