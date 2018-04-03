@@ -1,6 +1,6 @@
 from urllib import parse
 
-from django.db import IntegrityError
+from django.db import DatabaseError
 from django.http import JsonResponse
 from django.views import View
 
@@ -42,36 +42,75 @@ class Key(View):
 
     def post(self, request, key=None):
         if 'value' not in request.POST:
-            return JsonResponse({'success': False, 'error': 'Value is empty'})
+            return self._get_success_response(False, 'Value is empty!')
 
         storage = Storage(key=key, value=request.POST['value'])
 
         try:
             storage.save()
-        except IntegrityError:
-            pass
+        except DatabaseError as error:
+            return self._get_success_response(False, self._get_database_error_string(error, key))
 
-        return JsonResponse({'success': True})
+        return self._get_success_response(True)
 
     def put(self, request, key=None):
         try:
             storage = Storage.objects.get(key=key)
         except Storage.MultipleObjectsReturned:
-            pass  # TODO: return error here
+            return self._get_success_response(False)
+        except Storage.DoesNotExist:
+            return self._get_success_response(False, 'Key %d does not exist!' % key)
 
         put_data = parse.parse_qs(request.body)
+
+        if b'value' not in put_data:
+            return self._get_success_response(False, 'Value is empty!')
+
         storage_value = put_data[b'value'][0].decode('utf-8')
 
         storage.value = storage_value
 
         try:
             storage.save()
-        except IntegrityError:
-            pass
+        except DatabaseError as error:
+            return self._get_database_error_string(error, key)
 
-        return JsonResponse({'success': True})
+        return self._get_success_response(True)
 
     def delete(self, request, key=None):
-        storage = Storage.objects.filter(key=key).delete()
+        Storage.objects.filter(key=key).delete()
 
-        return JsonResponse({'success': True})
+        return self._get_success_response(True)
+
+    @staticmethod
+    def _get_database_error_string(error, key=None):
+        """
+        Get the error string from error exception.
+        :param error: error exception
+        :return: error string
+        :rtype: str
+        """
+        database_error_code = error.args[0]
+
+        if database_error_code == 1264:
+            return 'Too big key!'
+        elif database_error_code == 1062:
+            return 'Key %d already exists. Try with another key!' % key
+        else:
+            return 'Some error occurred. Please, try one more time!'
+
+    @staticmethod
+    def _get_success_response(success, error=None):
+        """
+        Return JsonResponse response in format success and error if success is False.
+        :param success: True or False
+        :param error: error string
+        :return: Response accoring to format
+        :rtype: JsonResponse
+        """
+        error = error or 'Some error occurred. Please, try later!'
+
+        if success is True:
+            return JsonResponse({'success': success})
+        else:
+            return JsonResponse({'success': success, 'error': error})
