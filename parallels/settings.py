@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = config['DEFAULT']['SecretKey']
 
-DEBUG = config['DEFAULT']['debug']
+DEBUG = config['DEFAULT'].getboolean('Debug')
 
 ALLOWED_HOSTS = []
 
